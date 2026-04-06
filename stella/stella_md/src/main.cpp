@@ -26,6 +26,11 @@ stellaN5_node::stellaN5_node() : Node("stella_md_node")
 {
   auto qos = rclcpp::QoS(rclcpp::KeepLast(10));
 
+  this->declare_parameter<std::string>("odom_frame_id", "odom");
+  this->declare_parameter<std::string>("base_frame_id", "base_footprint");
+  this->get_parameter("odom_frame_id", odom_frame_id_);
+  this->get_parameter("base_frame_id", base_frame_id_);
+
   ahrs_yaw_sub_ = this->create_subscription<std_msgs::msg::Float64>("imu/yaw", 1, std::bind(&stellaN5_node::ahrs_yaw_data_callback, this, std::placeholders::_1));
   cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&stellaN5_node::command_velocity_callback, this, std::placeholders::_1));
   odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", qos);
@@ -74,12 +79,12 @@ bool stellaN5_node::update_odometry()
   
   //로봇 기구학 적용및 센서퓨전
   delta_s  = (delta_right + delta_left) / 2.0 ;
-  delta_th = (ahrs_yaw * convertor_d2r); 
 
-/*
-  th 값은 AHRS YAW 값을 참조하여 아래의 식은 주석으로 처리한다.
-  delta_th = (delta_right - delta_left) / Differential_MobileRobot.axle_length;
-*/
+
+  delta_th = (ahrs_yaw * convertor_d2r); 
+  // th 값은 AHRS YAW 값을 참조하여 아래의 식은 주석으로 처리한다. 는 개뿔.
+  // delta_th = (delta_right - delta_left) / Differential_MobileRobot.axle_length;
+
 
   delta_x  = delta_s * cos(delta_th);
   delta_y  = delta_s * sin(delta_th);
@@ -102,8 +107,8 @@ bool stellaN5_node::update_odometry()
   rclcpp::Time time_now = this->now();
   
   t.header.stamp = time_now;
-  t.header.frame_id = "odom";
-  t.child_frame_id = "base_footprint";
+  t.header.frame_id = odom_frame_id_;
+  t.child_frame_id = base_frame_id_;
 
   t.transform.translation.x = x;
   t.transform.translation.y = y;
@@ -116,13 +121,13 @@ bool stellaN5_node::update_odometry()
 
   odom_broadcaster->sendTransform(t);
 
-  odom.header.frame_id = "odom";
+  odom.header.frame_id = odom_frame_id_;
 
   odom.pose.pose.position.x = x;
   odom.pose.pose.position.y = y;
   odom.pose.pose.position.z = 0.0;
 
-  odom.child_frame_id = "base_footprint";
+  odom.child_frame_id = base_frame_id_;
   odom.twist.twist.linear.x = goal_linear_velocity_;
   odom.twist.twist.angular.z = goal_angular_velocity_;
 

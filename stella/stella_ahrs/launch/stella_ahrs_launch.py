@@ -11,13 +11,16 @@ from launch_ros.actions import Node
 from launch_ros.actions import LifecycleNode
 
 def generate_launch_description():
-    
+
     config_dir = get_package_share_directory('stella_ahrs')
     config_file = os.path.join(config_dir, 'config', 'config.yaml')
 
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     use_rviz = LaunchConfiguration('use_rviz')
-    
+
+    frame_id = LaunchConfiguration('frame_id', default='imu_link')
+    parent_frame_id = LaunchConfiguration('parent_frame_id', default='base_link')
+
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         'rviz_config_file',
         default_value=os.path.join(config_dir, 'rviz', 'imu_test.rviz'),
@@ -39,13 +42,20 @@ def generate_launch_description():
     driver_node = LifecycleNode(package='stella_ahrs',
                                 executable='stella_ahrs_node',
                                 name='stella_ahrs_node',
+                                namespace='',
                                 output='screen',
                                 emulate_tty=True,
-                                namespace='/',
+                                parameters=[{
+                                    'frame_id': frame_id,
+                                    'parent_frame_id': parent_frame_id,
+                                }],
                                 )
 
     return LaunchDescription([
-      driver_node,
+        DeclareLaunchArgument('frame_id', default_value='imu_link',
+                              description='TF frame id for IMU'),
+        DeclareLaunchArgument('parent_frame_id', default_value='base_link',
+                              description='TF parent frame id for IMU'),
+        driver_node,
     ])
-
 

@@ -19,16 +19,16 @@ import yaml
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction, ExecuteProcess
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir, PythonExpression
 from launch.conditions import IfCondition
-from launch_ros.actions import Node
+from launch_ros.actions import Node, PushRosNamespace
 
 def generate_launch_description():
     package_share_dir = get_package_share_directory('stella_bringup')
     param_file_path = os.path.join(package_share_dir, 'param', 'robot_launch_param.yaml')
-    
+
     # Get parameter from YAML
     with open(param_file_path, 'r') as f:
         param = yaml.safe_load(f)
@@ -61,18 +61,34 @@ def generate_launch_description():
         default=os.path.join(get_package_share_directory('realsense2_camera'), 'launch'))
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
+    robot_ns = LaunchConfiguration('robot_ns', default='')
 
-    return LaunchDescription([
-        DeclareLaunchArgument(
-            'use_sim_time',
-            default_value=use_sim_time,
-            description='Use simulation (Gazebo) clock if true'),
-        
+    # frame_prefix: '{robot_ns}/' if robot_ns is not empty, else ''
+    frame_prefix = PythonExpression(["'", robot_ns, "/' if '", robot_ns, "' else ''"])
+
+    # Namespace arg for ExecuteProcess (safety_gate)
+    ns_remap = PythonExpression(["'__ns:=/' + '", robot_ns, "'"])
+
+    # Prefixed frame IDs for TF
+    odom_frame_id = PythonExpression(["'", robot_ns, "/odom' if '", robot_ns, "' else 'odom'"])
+    base_frame_id = PythonExpression(["'", robot_ns, "/base_footprint' if '", robot_ns, "' else 'base_footprint'"])
+    base_scan_frame_id = PythonExpression(["'", robot_ns, "/base_scan' if '", robot_ns, "' else 'base_scan'"])
+    base_scan2_frame_id = PythonExpression(["'", robot_ns, "/base_scan2' if '", robot_ns, "' else 'base_scan2'"])
+    imu_frame_id = PythonExpression(["'", robot_ns, "/imu_link' if '", robot_ns, "' else 'imu_link'"])
+    imu_parent_frame_id = PythonExpression(["'", robot_ns, "/base_link' if '", robot_ns, "' else 'base_link'"])
+
+    # All nodes wrapped in GroupAction with PushRosNamespace
+    namespaced_nodes = GroupAction([
+        PushRosNamespace(robot_ns),
+
         # Default state publisher
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/stella_state_publisher.launch.py']),
-            launch_arguments={'use_sim_time': use_sim_time}.items(),
+            launch_arguments={
+                'use_sim_time': use_sim_time,
+                'frame_prefix': frame_prefix,
+            }.items(),
             condition=IfCondition('false' if (launch_usb_cam or launch_realsense) else 'true')
         ),
 
@@ -80,36 +96,56 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/stella_state_publisher_realsense.launch.py']),
-            launch_arguments={'use_sim_time': use_sim_time}.items(),
+            launch_arguments={
+                'use_sim_time': use_sim_time,
+                'frame_prefix': frame_prefix,
+            }.items(),
             condition=IfCondition('true' if launch_realsense else 'false')
         ),
 
-        # state publisher with realsense
+        # state publisher with webcam
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 [ThisLaunchFileDir(), '/stella_state_publisher_web_cam.launch.py']),
-            launch_arguments={'use_sim_time': use_sim_time}.items(),
+            launch_arguments={
+                'use_sim_time': use_sim_time,
+                'frame_prefix': frame_prefix,
+            }.items(),
             condition=IfCondition('true' if launch_usb_cam else 'false')
         ),
 
         # MotorDriver launch
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([md_pkg_dir, '/stella_md_launch.py'])
+            PythonLaunchDescriptionSource([md_pkg_dir, '/stella_md_launch.py']),
+            launch_arguments={
+                'odom_frame_id': odom_frame_id,
+                'base_frame_id': base_frame_id,
+            }.items(),
         ),
 
         # AHRS launch
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([ahrs_pkg_dir, '/stella_ahrs_launch.py'])
+            PythonLaunchDescriptionSource([ahrs_pkg_dir, '/stella_ahrs_launch.py']),
+            launch_arguments={
+                'frame_id': imu_frame_id,
+                'parent_frame_id': imu_parent_frame_id,
+            }.items(),
         ),
 
         # Upper lidar launch
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([lidar_pkg_dir, '/sllidar_c1_launch.py'])
+            PythonLaunchDescriptionSource([lidar_pkg_dir, '/sllidar_c1_launch.py']),
+            launch_arguments={
+                'frame_id': base_scan_frame_id,
+            }.items(),
         ),
 
         # Bottom lidar launch
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([lidar2_pkg_dir, '/sllidar_c1_launch.py']),
+            launch_arguments={
+                'frame2_id': base_scan2_frame_id,
+            }.items(),
             condition=IfCondition('true' if launch_lidar2 else 'false')
         ),
 
@@ -179,11 +215,31 @@ def generate_launch_description():
             executable='hailo_ros2_detection_node',
             name='hailo_ros2_detection_node',
             remappings=[
-                ('image_raw', '/camera/camera/color/image_raw')
+                ('image_raw', 'camera/camera/color/image_raw')
             ],
             output='screen',
             condition=IfCondition('true' if (launch_realsense and not launch_pointcloud and launch_hailo) else 'false')
         ),
-
     ])
 
+    # Safety gate: cmd_vel -> cmd_vel_safe (always runs, joystick optional)
+    # ExecuteProcess is not affected by PushRosNamespace, so pass namespace explicitly.
+    safety_gate = ExecuteProcess(
+        cmd=['python3', '/home/stella2/stella_tools/safety/stella_safety_gate.py',
+             '--ros-args', '-r', ns_remap],
+        name='stella_safety_gate',
+        output='screen',
+    )
+
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='false',
+            description='Use simulation (Gazebo) clock if true'),
+        DeclareLaunchArgument(
+            'robot_ns',
+            default_value='',
+            description='Robot namespace (e.g. robot1, robot2). Empty for no namespace.'),
+        namespaced_nodes,
+        safety_gate,
+    ])

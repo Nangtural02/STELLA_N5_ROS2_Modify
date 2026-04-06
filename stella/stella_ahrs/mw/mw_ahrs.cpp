@@ -252,6 +252,16 @@ namespace ntrex
 
       auto qos = rclcpp::QoS(rclcpp::KeepLast(10)) .reliable() .durability_volatile();
 
+      this->declare_parameter<std::string>("frame_id", "imu_link");
+      this->declare_parameter<std::string>("parent_frame_id", "base_link");
+      this->declare_parameter<bool>("publish_tf", false);
+      this->get_parameter("frame_id", frame_id_);
+      this->get_parameter("parent_frame_id", parent_frame_id_);
+      this->get_parameter("publish_tf", publish_tf_);
+      if (publish_tf_) {
+          broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+      }
+
       imu_data_raw_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data_raw", qos);
       imu_data_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu/data", qos);
       imu_mag_pub_ = this->create_publisher<sensor_msgs::msg::MagneticField>("imu/mag", qos);

@@ -39,11 +39,16 @@
 class PointCloudToLaserScanNodeTF : public rclcpp::Node {
 public:
     PointCloudToLaserScanNodeTF() : Node("pointcloud_to_laserscan_tf"), tf_broadcaster_(std::make_shared<tf2_ros::TransformBroadcaster>(this)) {
+        this->declare_parameter<std::string>("camera_frame_id", "camera_depth_optical_frame");
+        this->declare_parameter<std::string>("scan_frame_id", "depth_scan_frame");
+        this->get_parameter("camera_frame_id", camera_frame_id_);
+        this->get_parameter("scan_frame_id", scan_frame_id_);
+
         sub_pc_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/camera/camera/depth/color/points", 10,
+        "camera/camera/depth/color/points", 10,
         std::bind(&PointCloudToLaserScanNodeTF::pointCloudCallback, this, std::placeholders::_1));
 
-        pub_scan_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/scan_pointcloud", rclcpp::QoS(rclcpp::KeepLast(10)));
+        pub_scan_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan_pointcloud", rclcpp::QoS(rclcpp::KeepLast(10)));
     }
 
 private:
@@ -104,7 +109,7 @@ private:
 
         auto scan_msg = std::make_unique<sensor_msgs::msg::LaserScan>();
         scan_msg->header = cloud_msg->header;
-        scan_msg->header.frame_id = "depth_scan_frame";
+        scan_msg->header.frame_id = scan_frame_id_;
 
         double angle_min = -0.76;
         double angle_max = 0.76;
@@ -181,8 +186,8 @@ private:
         geometry_msgs::msg::TransformStamped transform_stamped;
 
         transform_stamped.header.stamp = stamp;
-        transform_stamped.header.frame_id = "camera_depth_optical_frame";
-        transform_stamped.child_frame_id = "depth_scan_frame";
+        transform_stamped.header.frame_id = camera_frame_id_;
+        transform_stamped.child_frame_id = scan_frame_id_;
 
         transform_stamped.transform.translation.x = 0.0;
         transform_stamped.transform.translation.y = 0.0;
@@ -211,6 +216,8 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_pc_;
     rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub_scan_;
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+    std::string camera_frame_id_;
+    std::string scan_frame_id_;
 };
 
 

@@ -1,0 +1,15 @@
+# Build
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# ROS2 generated
+*.log

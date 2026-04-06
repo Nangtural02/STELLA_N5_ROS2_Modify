@@ -36,10 +36,10 @@ class PointCloudPassThroughFilterNode : public rclcpp::Node {
 public:
     PointCloudPassThroughFilterNode() : Node("pointcloud_passthrough_filter") {
         sub_pc_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-        "/camera/camera/depth/color/points", 10,
+        "camera/camera/depth/color/points", 10,
         std::bind(&PointCloudPassThroughFilterNode::pointCloudCallback, this, std::placeholders::_1));
 
-        pub_pc_filtered_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud_filtered", 10);
+        pub_pc_filtered_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("cloud_filtered", 10);
     }
 
 private:
