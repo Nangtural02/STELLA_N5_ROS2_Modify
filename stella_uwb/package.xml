@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>stella_uwb</name>
+  <version>0.1.0</version>
+  <description>UWB serial driver for STELLA robot</description>
+  <maintainer email="nangtural02@gmail.com">nangtural02</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>stella_uwb_msgs</depend>
+
+  <exec_depend>python3-serial</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -39,6 +39,7 @@ def generate_launch_description():
     launch_pointcloud = param.get('launch_pointcloud', False)
     launch_pointcloud_laserscan_filter = param.get('launch_pointcloud_laserscan_filter', False)
     launch_hailo = param.get('launch_hailo', False)
+    launch_uwb = param.get('launch_uwb', False)
 
     md_pkg_dir = LaunchConfiguration(
         'md_pkg_dir',
@@ -220,12 +221,23 @@ def generate_launch_description():
             output='screen',
             condition=IfCondition('true' if (launch_realsense and not launch_pointcloud and launch_hailo) else 'false')
         ),
+
+        # UWB driver node
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                os.path.join(get_package_share_directory('stella_uwb'), 'launch', 'stella_uwb.launch.py')
+            ]),
+            condition=IfCondition('true' if launch_uwb else 'false')
+        ),
     ])
 
     # Safety gate: cmd_vel -> cmd_vel_safe (always runs, joystick optional)
     # ExecuteProcess is not affected by PushRosNamespace, so pass namespace explicitly.
+    # Repo is always at ~/colcon_ws/src/STELLA_N5_ROS2_Modify
+    home = os.path.expanduser('~')
+    repo_dir = os.path.join(home, 'colcon_ws', 'src', 'STELLA_N5_ROS2_Modify')
     safety_gate = ExecuteProcess(
-        cmd=['python3', '/home/stella2/stella_tools/safety/stella_safety_gate.py',
+        cmd=['python3', os.path.join(repo_dir, 'stella_tools', 'safety', 'stella_safety_gate.py'),
              '--ros-args', '-r', ns_remap],
         name='stella_safety_gate',
         output='screen',

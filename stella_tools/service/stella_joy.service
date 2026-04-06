@@ -5,14 +5,14 @@ Requires=stella_bringup.service
 
 [Service]
 Type=simple
-User=stella2
-Environment="ROS_DOMAIN_ID=52"
+User=__USER__
+EnvironmentFile=__REPO_DIR__/stella_tools/config/robot.env
 ExecStartPre=/bin/sleep 5
 ExecStart=/bin/bash -c '\
   source /opt/ros/jazzy/setup.bash && \
-  source /home/stella2/colcon_ws/install/local_setup.bash && \
-  source /home/stella2/jazzy_ws/install/local_setup.bash && \
-  ros2 launch /home/stella2/stella_tools/joystick/stella_joy_launch.py config_filepath:=/home/stella2/stella_tools/joystick/stella_joy.yaml robot_ns:=robot2'
+  source __HOME__/colcon_ws/install/local_setup.bash && \
+  source __HOME__/jazzy_ws/install/local_setup.bash && \
+  ros2 launch __REPO_DIR__/stella_tools/joystick/stella_joy_launch.py robot_ns:=${ROBOT_NS}'
 Restart=on-failure
 RestartSec=5
 

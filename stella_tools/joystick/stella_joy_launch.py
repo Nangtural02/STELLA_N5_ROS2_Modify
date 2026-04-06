@@ -9,6 +9,7 @@ The safety gate (stella_safety_gate) runs as part of stella_bringup,
 so all cmd_vel commands are automatically gated.
 """
 
+import os
 import yaml
 
 from launch import LaunchDescription
@@ -29,7 +30,9 @@ def load_joy_params(filepath):
 
 
 def generate_launch_description():
-    default_config = '/home/stella2/stella_tools/joystick/stella_joy.yaml'
+    home = os.path.expanduser('~')
+    repo_dir = os.path.join(home, 'colcon_ws', 'src', 'STELLA_N5_ROS2_Modify')
+    default_config = os.path.join(repo_dir, 'stella_tools', 'joystick', 'stella_joy.yaml')
 
     joy_dev = LaunchConfiguration('joy_dev', default='0')
     config_filepath = LaunchConfiguration('config_filepath', default=default_config)

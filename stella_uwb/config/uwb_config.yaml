@@ -1,0 +1,9 @@
+# UWB Driver Configuration
+frame_id: "uwb_link"
+
+# Serial devices — one entry per UWB anchor module
+uwb_devices:
+  - port: "/dev/ttyACM0"
+    baud_rate: 115200
+  # - port: "/dev/ttyUSB1"
+  #   baud_rate: 115200
