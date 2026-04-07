@@ -17,7 +17,11 @@ class UwbPublisher(Node):
 
         # Relative topic — namespace applied by PushRosNamespace in launch
         self._pub = self.create_publisher(UwbData, 'uwb/data', 10)
-        self._frame_id = config.get('frame_id', 'uwb_link')
+
+        # Apply namespace prefix to frame_id (e.g. robot2/uwb_link)
+        ns = self.get_namespace().strip('/')
+        base_frame_id = config.get('frame_id', 'uwb_link')
+        self._frame_id = f'{ns}/{base_frame_id}' if ns else base_frame_id
 
         devices = config.get('uwb_devices', [])
         if not devices:
