@@ -62,6 +62,7 @@ def generate_launch_description():
             parameters=[rsp_params, {
                 'use_sim_time': use_sim_time,
                 'frame_prefix': frame_prefix,
+                'publish_frequency': 1.0,
             }],),
         Node(
             package='joint_state_publisher',

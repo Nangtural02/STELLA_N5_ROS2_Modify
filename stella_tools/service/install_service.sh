@@ -63,6 +63,7 @@ sudo systemctl enable stella_bringup.service stella_joy.service
 
 # 4. Add shell aliases
 ALIAS_BLOCK="# === STELLA robot aliases ===
+export ROS_DISCOVERY_SERVER=${DISC_IP}:${DISC_PORT}
 alias unlock='ros2 service call /${ROBOT_NS}/safety_gate/set_lock std_srvs/srv/SetBool \"{data: false}\"'
 alias lock='ros2 service call /${ROBOT_NS}/safety_gate/set_lock std_srvs/srv/SetBool \"{data: true}\"'
 alias stella-start='sudo systemctl start stella_bringup stella_joy'
