@@ -71,6 +71,8 @@ alias stella-stop='sudo systemctl stop stella_joy stella_bringup'
 alias stella-restart='sudo systemctl restart stella_joy stella_bringup'
 alias stella-status='sudo systemctl status stella_bringup stella_joy'
 alias stella-log='journalctl -u stella_bringup -u stella_joy -f'
+alias stella-multicast='bash $REPO_DIR/stella_tools/service/switch_discovery.sh multicast'
+alias stella-unicast='bash $REPO_DIR/stella_tools/service/switch_discovery.sh unicast'
 # === end STELLA ==="
 
 # Remove old aliases if present, then append
