@@ -12,16 +12,21 @@ before reaching the motor driver.
   Publications:
     cmd_vel_safe - gated velocity commands → stella_md (via remapping)
 
-Features:
-  - Park/lock: Hold X button (1s) to toggle. When locked, all cmd_vel is blocked.
-  - Speed multiplier: D-pad UP/DOWN to adjust (0.25x ~ 2.0x).
-  - Rumble feedback for lock/unlock/blocked commands.
+  Services:
+    safety_gate/unlock - call to unlock without joystick (std_srvs/SetBool)
+
+Safety behavior:
+  - Starts LOCKED. Robot will not move until explicitly unlocked.
+  - Unlock via joystick (hold X 1s) or service call.
+  - Auto-locks after 10 min of no cmd_vel activity.
+  - Speed multiplier: D-pad UP/DOWN (0.25x ~ 2.0x).
 """
 
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy, JoyFeedback
+from std_srvs.srv import SetBool
 
 
 class StellaSafetyGate(Node):
@@ -33,18 +38,20 @@ class StellaSafetyGate(Node):
     MULTIPLIER_MIN = 0.25
     MULTIPLIER_MAX = 2.0
     MULTIPLIER_DEFAULT = 1.0
+    AUTO_LOCK_SEC = 600.0    # 10 minutes
 
     def __init__(self):
         super().__init__('stella_safety_gate')
 
-        # State
-        self.locked = False
+        # State — starts LOCKED
+        self.locked = True
         self.multiplier = self.MULTIPLIER_DEFAULT
         self.lock_btn_press_time = None
         self.lock_btn_was_pressed = False
         self.lock_toggled_this_press = False
         self.dpad_y_prev = 0.0
         self.last_warn_rumble = self.get_clock().now()
+        self.last_cmd_time = self.get_clock().now()
 
         # Publishers / Subscribers
         self.cmd_pub = self.create_publisher(Twist, 'cmd_vel_safe', 10)
@@ -54,11 +61,25 @@ class StellaSafetyGate(Node):
         self.joy_sub = self.create_subscription(
             Joy, 'joy', self.joy_callback, 10)
 
-        # Timer to check lock hold duration & publish stop when locked (20 Hz)
+        # Service for unlock without joystick
+        self.unlock_srv = self.create_service(
+            SetBool, 'safety_gate/set_lock', self.set_lock_callback)
+
+        # Timer to check lock hold duration & auto-lock (20 Hz)
         self.timer = self.create_timer(0.05, self.timer_callback)
 
-        self.get_logger().info(
-            f'Safety gate started - multiplier: {self.multiplier:.2f}x, locked: {self.locked}')
+        self.get_logger().info('Safety gate started - LOCKED (unlock via joystick or service)')
+
+    def set_lock_callback(self, request, response):
+        """SetBool service: data=true → lock, data=false → unlock."""
+        self.locked = request.data
+        state = 'LOCKED' if self.locked else 'UNLOCKED'
+        self.get_logger().info(f'Robot {state} via service')
+        if not self.locked:
+            self.last_cmd_time = self.get_clock().now()
+        response.success = True
+        response.message = state
+        return response
 
     def joy_callback(self, msg: Joy):
         self._handle_lock_button(msg)
@@ -98,7 +119,8 @@ class StellaSafetyGate(Node):
         self.dpad_y_prev = dpad_y
 
     def timer_callback(self):
-        """Check lock button hold & continuously publish stop when locked."""
+        """Check lock button hold, auto-lock, and publish stop when locked."""
+        # Check lock button hold
         if self.lock_btn_press_time is not None and not self.lock_toggled_this_press:
             elapsed = (self.get_clock().now() - self.lock_btn_press_time).nanoseconds / 1e9
             if elapsed >= self.HOLD_DURATION:
@@ -107,6 +129,15 @@ class StellaSafetyGate(Node):
                 state = 'LOCKED' if self.locked else 'UNLOCKED'
                 self.get_logger().info(f'Robot {state}')
                 self._rumble(1.0, 0.6 if self.locked else 0.3)
+                if not self.locked:
+                    self.last_cmd_time = self.get_clock().now()
+
+        # Auto-lock after inactivity
+        if not self.locked:
+            idle = (self.get_clock().now() - self.last_cmd_time).nanoseconds / 1e9
+            if idle >= self.AUTO_LOCK_SEC:
+                self.locked = True
+                self.get_logger().info('Robot LOCKED (auto-lock: 10 min idle)')
 
         if self.locked:
             self.cmd_pub.publish(Twist())
@@ -171,6 +202,11 @@ class StellaSafetyGate(Node):
                     self._rumble_pattern(0.7, [(0.15, 0.05, 0.15)])
                     self.last_warn_rumble = now
             return
+
+        # Track activity for auto-lock
+        if (msg.linear.x != 0.0 or msg.linear.y != 0.0 or
+                msg.angular.z != 0.0):
+            self.last_cmd_time = self.get_clock().now()
 
         out = Twist()
         out.linear.x = msg.linear.x * self.multiplier

@@ -19,9 +19,9 @@ import yaml
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, GroupAction, ExecuteProcess, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir, PythonExpression
+from launch.substitutions import LaunchConfiguration, ThisLaunchFileDir, PythonExpression, EnvironmentVariable
 from launch.conditions import IfCondition
 from launch_ros.actions import Node, PushRosNamespace
 
@@ -243,7 +243,15 @@ def generate_launch_description():
         output='screen',
     )
 
+    # Forward ROS_DISCOVERY_SERVER to all child nodes if set
+    discovery_server_env = os.environ.get('ROS_DISCOVERY_SERVER', '')
+    discovery_actions = []
+    if discovery_server_env:
+        discovery_actions.append(
+            SetEnvironmentVariable('ROS_DISCOVERY_SERVER', discovery_server_env))
+
     return LaunchDescription([
+        *discovery_actions,
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='false',
