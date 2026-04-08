@@ -7,6 +7,7 @@ Type=simple
 User=__USER__
 EnvironmentFile=__REPO_DIR__/stella_tools/config/robot.env
 Environment="FASTRTPS_DEFAULT_PROFILES_FILE=__REPO_DIR__/stella_tools/config/fastdds_peers.xml"
+Environment="FASTDDS_BUILTIN_TRANSPORTS=LARGE_DATA"
 ExecStart=/bin/bash -c '\
   source /opt/ros/jazzy/setup.bash && \
   source __HOME__/colcon_ws/install/local_setup.bash && \
