@@ -1,6 +1,7 @@
 [Unit]
 Description=STELLA N5 Bringup
-After=network.target
+After=network.target dev-AHRS.device
+Requires=dev-AHRS.device
 
 [Service]
 Type=simple
