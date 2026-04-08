@@ -52,6 +52,7 @@ sudo systemctl enable stella_bringup.service stella_joy.service
 # 4. Add shell aliases
 ALIAS_BLOCK="# === STELLA robot aliases ===
 export FASTRTPS_DEFAULT_PROFILES_FILE=$REPO_DIR/stella_tools/config/fastdds_peers.xml
+export FASTDDS_BUILTIN_TRANSPORTS=LARGE_DATA
 alias unlock='ros2 service call /${ROBOT_NS}/safety_gate/set_lock std_srvs/srv/SetBool \"{data: false}\"'
 alias lock='ros2 service call /${ROBOT_NS}/safety_gate/set_lock std_srvs/srv/SetBool \"{data: true}\"'
 alias stella-start='sudo systemctl start stella_bringup stella_joy'
