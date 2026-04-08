@@ -5,12 +5,14 @@
             <rtps>
                 <builtin>
                     <initialPeersList>
+                        <!-- Localhost (for local node discovery) -->
+                        <locator><udpv4><address>127.0.0.1</address></udpv4></locator>
                         <!-- Control PC -->
-                        <locator><udpv4><address>192.168.0.115</address></udpv4></locator>
+                        <locator><udpv4><address>192.168.129.182</address></udpv4></locator>
                         <!-- Robot 1 -->
-                        <locator><udpv4><address>192.168.0.56</address></udpv4></locator>
+                        <locator><udpv4><address>192.168.129.192</address></udpv4></locator>
                         <!-- Robot 2 -->
-                        <locator><udpv4><address>192.168.0.64</address></udpv4></locator>
+                        <locator><udpv4><address>192.168.129.214</address></udpv4></locator>
                     </initialPeersList>
                 </builtin>
             </rtps>
