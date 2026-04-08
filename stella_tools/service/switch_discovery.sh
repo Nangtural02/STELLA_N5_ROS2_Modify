@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Switch between unicast (Discovery Server) and multicast discovery.
+# Switch between unicast (Static Peers) and multicast discovery.
 # Usage: ./switch_discovery.sh unicast|multicast
 #
 
@@ -21,15 +21,14 @@ for SERVICE in stella_bringup.service stella_joy.service; do
   fi
 
   if [ "$MODE" = "multicast" ]; then
-    # Comment out the discovery server line
-    sudo sed -i 's|^Environment="ROS_DISCOVERY_SERVER=.*"|#Environment="ROS_DISCOVERY_SERVER=disabled"|' "$FILE"
+    sudo sed -i 's|^Environment="FASTRTPS_DEFAULT_PROFILES_FILE=.*"|#Environment="FASTRTPS_DEFAULT_PROFILES_FILE=disabled"|' "$FILE"
     echo "[OK] $SERVICE -> multicast"
   else
-    # Restore from robot.env
-    source "$(grep EnvironmentFile "$FILE" | cut -d= -f2-)"
-    DISC="${DISCOVERY_SERVER_IP}:${DISCOVERY_SERVER_PORT}"
-    sudo sed -i "s|^#Environment=\"ROS_DISCOVERY_SERVER=.*\"|Environment=\"ROS_DISCOVERY_SERVER=$DISC\"|" "$FILE"
-    echo "[OK] $SERVICE -> unicast ($DISC)"
+    # Restore peers XML path from the commented line's repo dir
+    REPO_DIR=$(grep EnvironmentFile "$FILE" | sed 's|EnvironmentFile=||;s|/stella_tools/config/robot.env||')
+    PEERS="$REPO_DIR/stella_tools/config/fastdds_peers.xml"
+    sudo sed -i "s|^#Environment=\"FASTRTPS_DEFAULT_PROFILES_FILE=.*\"|Environment=\"FASTRTPS_DEFAULT_PROFILES_FILE=$PEERS\"|" "$FILE"
+    echo "[OK] $SERVICE -> unicast (static peers)"
   fi
 done
 

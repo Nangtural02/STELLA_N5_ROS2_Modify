@@ -21,12 +21,9 @@ echo ""
 # Interactive input
 read -p "Robot namespace (e.g. robot1, robot2): " ROBOT_NS
 read -p "ROS Domain ID (e.g. 52): " DOMAIN_ID
-read -p "Discovery Server IP (e.g. 192.168.0.115): " DISC_IP
-read -p "Discovery Server Port (default 11811): " DISC_PORT
-DISC_PORT=${DISC_PORT:-11811}
 
-if [ -z "$ROBOT_NS" ] || [ -z "$DOMAIN_ID" ] || [ -z "$DISC_IP" ]; then
-  echo "Error: Robot namespace, Domain ID, and Discovery Server IP are required."
+if [ -z "$ROBOT_NS" ] || [ -z "$DOMAIN_ID" ]; then
+  echo "Error: Both values are required."
   exit 1
 fi
 
@@ -36,23 +33,14 @@ mkdir -p "$CONFIG_DIR"
 cat > "$CONFIG_DIR/robot.env" <<EOF
 ROBOT_NS=$ROBOT_NS
 ROS_DOMAIN_ID=$DOMAIN_ID
-DISCOVERY_SERVER_IP=$DISC_IP
-DISCOVERY_SERVER_PORT=$DISC_PORT
 EOF
 echo "[OK] Created $CONFIG_DIR/robot.env"
 
-# 2. Generate FastDDS client XML
-sed -e "s|__DISCOVERY_IP__|$DISC_IP|g" \
-    -e "s|__DISCOVERY_PORT__|$DISC_PORT|g" \
-    "$CONFIG_DIR/fastdds_discovery_client.xml" > "$CONFIG_DIR/fastdds_client.xml"
-echo "[OK] Created $CONFIG_DIR/fastdds_client.xml"
-
-# 3. Generate service files from templates
+# 2. Generate service files from templates
 for SERVICE in stella_bringup.service stella_joy.service; do
   sed -e "s|__USER__|$USER_NAME|g" \
       -e "s|__HOME__|$USER_HOME|g" \
       -e "s|__REPO_DIR__|$REPO_DIR|g" \
-      -e "s|__DISC_SERVER__|$DISC_IP:$DISC_PORT|g" \
       "$SCRIPT_DIR/$SERVICE" | sudo tee /etc/systemd/system/$SERVICE > /dev/null
   echo "[OK] Installed $SERVICE"
 done
@@ -63,7 +51,7 @@ sudo systemctl enable stella_bringup.service stella_joy.service
 
 # 4. Add shell aliases
 ALIAS_BLOCK="# === STELLA robot aliases ===
-export ROS_DISCOVERY_SERVER=${DISC_IP}:${DISC_PORT}
+export FASTRTPS_DEFAULT_PROFILES_FILE=$REPO_DIR/stella_tools/config/fastdds_peers.xml
 alias unlock='ros2 service call /${ROBOT_NS}/safety_gate/set_lock std_srvs/srv/SetBool \"{data: false}\"'
 alias lock='ros2 service call /${ROBOT_NS}/safety_gate/set_lock std_srvs/srv/SetBool \"{data: true}\"'
 alias stella-start='sudo systemctl start stella_bringup stella_joy'
@@ -83,12 +71,12 @@ echo "[OK] Added shell aliases to .bashrc"
 
 echo ""
 echo "=== Done ==="
-echo "  unlock / lock   - safety gate control"
-echo "  stella-start    - start all services"
-echo "  stella-stop     - stop all services"
-echo "  stella-restart  - restart all services"
-echo "  stella-status   - check status"
-echo "  stella-log      - follow logs"
+echo "  unlock / lock        - safety gate control"
+echo "  stella-start/stop    - service control"
+echo "  stella-restart       - restart all services"
+echo "  stella-status/log    - monitoring"
+echo "  stella-unicast       - switch to static peers (no multicast)"
+echo "  stella-multicast     - switch to multicast"
 echo ""
 echo "  Robot config: $CONFIG_DIR/robot.env"
 echo "  Run 'source ~/.bashrc' or open a new terminal to use aliases."

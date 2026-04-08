@@ -7,7 +7,7 @@ Requires=stella_bringup.service
 Type=simple
 User=__USER__
 EnvironmentFile=__REPO_DIR__/stella_tools/config/robot.env
-Environment="ROS_DISCOVERY_SERVER=__DISC_SERVER__"
+Environment="FASTRTPS_DEFAULT_PROFILES_FILE=__REPO_DIR__/stella_tools/config/fastdds_peers.xml"
 ExecStartPre=/bin/sleep 5
 ExecStart=/bin/bash -c '\
   source /opt/ros/jazzy/setup.bash && \
