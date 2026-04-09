@@ -9,6 +9,7 @@ def generate_launch_description():
 
     odom_frame_id = LaunchConfiguration('odom_frame_id', default='odom')
     base_frame_id = LaunchConfiguration('base_frame_id', default='base_footprint')
+    publish_tf = LaunchConfiguration('publish_tf', default='true')
 
     driver_node = LifecycleNode(package='stella_md',
                                 executable='stella_md_node',
@@ -19,6 +20,7 @@ def generate_launch_description():
                                 parameters=[{
                                     'odom_frame_id': odom_frame_id,
                                     'base_frame_id': base_frame_id,
+                                    'publish_tf': publish_tf,
                                 }],
                                 remappings=[
                                     ('cmd_vel', 'cmd_vel_safe'),
@@ -30,5 +32,7 @@ def generate_launch_description():
                               description='TF frame id for odometry'),
         DeclareLaunchArgument('base_frame_id', default_value='base_footprint',
                               description='TF frame id for robot base'),
+        DeclareLaunchArgument('publish_tf', default_value='true',
+                              description='Enable odom->base_footprint TF broadcasting'),
         driver_node,
     ])

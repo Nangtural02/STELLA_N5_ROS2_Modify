@@ -1,7 +1,8 @@
 teleop_twist_joy_node:
   ros__parameters:
-    require_enable_button: false
-    enable_turbo_button: 4    # LB - 정밀 제어
+    require_enable_button: true
+    enable_button: 4          # LB - 누르고 있어야 조이스틱 조작
+    enable_turbo_button: 5    # RB - 정밀 제어
 
     axis_linear:
       x: 1

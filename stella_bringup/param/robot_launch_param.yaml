@@ -5,3 +5,4 @@ launch_pointcloud: false
 launch_pointcloud_laserscan_filter: false
 launch_hailo: true
 launch_uwb: true
+stella_md_publish_tf: false

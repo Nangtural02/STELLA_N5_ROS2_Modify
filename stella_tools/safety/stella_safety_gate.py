@@ -32,6 +32,7 @@ from std_srvs.srv import SetBool
 class StellaSafetyGate(Node):
 
     LOCK_BUTTON = 2          # Xbox X button
+    ESTOP_BUTTON = 1         # Xbox B button
     DPAD_Y_AXIS = 7          # D-pad up=+1, down=-1
     HOLD_DURATION = 1.0      # seconds to hold for lock toggle
     MULTIPLIER_STEP = 0.25
@@ -83,7 +84,17 @@ class StellaSafetyGate(Node):
 
     def joy_callback(self, msg: Joy):
         self._handle_lock_button(msg)
+        self._handle_estop_button(msg)
         self._handle_dpad(msg)
+
+    def _handle_estop_button(self, msg: Joy):
+        if len(msg.buttons) <= self.ESTOP_BUTTON:
+            return
+        if msg.buttons[self.ESTOP_BUTTON] and not self.locked:
+            self.locked = True
+            self.cmd_pub.publish(Twist())
+            self._rumble(1.0, 0.6)
+            self.get_logger().info('E-STOP: Robot LOCKED')
 
     def _handle_lock_button(self, msg: Joy):
         if len(msg.buttons) <= self.LOCK_BUTTON:

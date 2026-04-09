@@ -40,6 +40,7 @@ private:
     
     std::string odom_frame_id_;
     std::string base_frame_id_;
+    bool publish_tf_;
 
     double ahrs_yaw, delta_th=0.0,delta_s=0.0,delta_x=0.0,delta_y=0.0,x=0.0,y=0.0,th=0.0,delta_left = 0,delta_right = 0;
 

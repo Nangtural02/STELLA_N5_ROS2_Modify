@@ -40,6 +40,7 @@ def generate_launch_description():
     launch_pointcloud_laserscan_filter = param.get('launch_pointcloud_laserscan_filter', False)
     launch_hailo = param.get('launch_hailo', False)
     launch_uwb = param.get('launch_uwb', False)
+    stella_md_publish_tf = param.get('stella_md_publish_tf', True)
 
     md_pkg_dir = LaunchConfiguration(
         'md_pkg_dir',
@@ -121,6 +122,7 @@ def generate_launch_description():
             launch_arguments={
                 'odom_frame_id': odom_frame_id,
                 'base_frame_id': base_frame_id,
+                'publish_tf': 'true' if stella_md_publish_tf else 'false',
             }.items(),
         ),
 

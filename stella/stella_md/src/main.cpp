@@ -28,8 +28,10 @@ stellaN5_node::stellaN5_node() : Node("stella_md_node")
 
   this->declare_parameter<std::string>("odom_frame_id", "odom");
   this->declare_parameter<std::string>("base_frame_id", "base_footprint");
+  this->declare_parameter<bool>("publish_tf", true);
   this->get_parameter("odom_frame_id", odom_frame_id_);
   this->get_parameter("base_frame_id", base_frame_id_);
+  this->get_parameter("publish_tf", publish_tf_);
 
   ahrs_yaw_sub_ = this->create_subscription<std_msgs::msg::Float64>("imu/yaw", 1, std::bind(&stellaN5_node::ahrs_yaw_data_callback, this, std::placeholders::_1));
   cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>("cmd_vel", 10, std::bind(&stellaN5_node::command_velocity_callback, this, std::placeholders::_1));
@@ -119,7 +121,7 @@ bool stellaN5_node::update_odometry()
   t.transform.rotation.z = Quaternion.z();
   t.transform.rotation.w = Quaternion.w();
 
-  odom_broadcaster->sendTransform(t);
+  if(publish_tf_) odom_broadcaster->sendTransform(t);
 
   odom.header.frame_id = odom_frame_id_;
 
