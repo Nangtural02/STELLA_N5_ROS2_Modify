@@ -40,6 +40,7 @@ def generate_launch_description():
     launch_pointcloud_laserscan_filter = param.get('launch_pointcloud_laserscan_filter', False)
     launch_hailo = param.get('launch_hailo', False)
     launch_uwb = param.get('launch_uwb', False)
+    launch_uwb_qm = param.get('launch_uwb_qm', False)
     stella_md_publish_tf = param.get('stella_md_publish_tf', True)
 
     md_pkg_dir = LaunchConfiguration(
@@ -230,6 +231,14 @@ def generate_launch_description():
                 os.path.join(get_package_share_directory('stella_uwb'), 'launch', 'stella_uwb.launch.py')
             ]),
             condition=IfCondition('true' if launch_uwb else 'false')
+        ),
+
+        # UWB QM driver node (TCP/Ethernet)
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                os.path.join(get_package_share_directory('stella_uwb_qm'), 'launch', 'stella_uwb_qm.launch.py')
+            ]),
+            condition=IfCondition('true' if launch_uwb_qm else 'false')
         ),
     ])
 
