@@ -39,14 +39,29 @@ ros2 launch stella_uwb_qm stella_uwb_qm.launch.py
 # robot.launch.py에서 launch_uwb_qm: true 로 활성화
 ```
 
+## Transport
+
+두 가지 transport를 지원한다. `UWB_QM_TYPE` 환경변수 (또는 `uwb_config.yaml`의 `type`)로 선택.
+
+| type | 용도 | 환경변수 |
+|------|------|---------|
+| `tcp` (기본) | RPi 기반 QM 보드 → 이더넷 JSON (로봇1) | `UWB_QM_HOST`, `UWB_QM_PORT` |
+| `nrf` | QM35 FT4222 USB 보드 → `run_fira_twr` stdout 파싱 (로봇2) | `UWB_QM_NRF_PORT`, `UWB_QM_NRF_ROLE` |
+
+`nrf` transport는 `run_fira_twr` (Qorvo UWB-Qorvo-Tools)가 `PATH`에 있어야 한다. 노드가 해당 바이너리를 subprocess로 띄워 stdout의 `# Ranging Data:` 텍스트 블록을 파싱한다. 프로세스가 죽으면 2초 뒤 자동 재기동.
+
 ## 설정
 
 `config/uwb_config.yaml`:
 ```yaml
+type: tcp          # tcp | nrf
 frame_id: "uwb_link"
 tcp:
   host: "192.168.5.2"
   port: 5000
+nrf:
+  port: "ftdi://FT4222"
+  role: "controlee"
 ```
 
 ## UwbData.msg 필드 매핑

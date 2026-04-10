@@ -8,6 +8,7 @@ Type=simple
 User=__USER__
 EnvironmentFile=__REPO_DIR__/stella_tools/config/robot.env
 ExecStart=/bin/bash -c '\
+  export PATH=__HOME__/.local/bin:$PATH && \
   source /opt/ros/jazzy/setup.bash && \
   source __HOME__/colcon_ws/install/local_setup.bash && \
   source __HOME__/jazzy_ws/install/local_setup.bash && \

@@ -1,5 +1,10 @@
+type: tcp          # tcp | nrf  (override with env UWB_QM_TYPE)
 frame_id: "uwb_link"
 
 tcp:
   host: "192.168.5.2"
   port: 5000
+
+nrf:
+  port: "ftdi://FT4222"
+  role: "controlee"

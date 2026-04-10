@@ -34,11 +34,22 @@ UWB_QM_TYPE="${UWB_QM_TYPE:-rpi}"
 
 UWB_QM_HOST=""
 UWB_QM_PORT=""
+UWB_QM_NRF_PORT=""
+UWB_QM_NRF_ROLE=""
+# stella_uwb_qm publisher expects UWB_QM_TYPE in {tcp, nrf}.
+# Map the friendly installer label "rpi" to "tcp" for the env file.
+UWB_QM_TYPE_ENV="$UWB_QM_TYPE"
 if [ "$UWB_QM_TYPE" = "rpi" ]; then
+  UWB_QM_TYPE_ENV="tcp"
   read -p "UWB QM host [192.168.5.2]: " UWB_QM_HOST
   UWB_QM_HOST="${UWB_QM_HOST:-192.168.5.2}"
   read -p "UWB QM port [5000]: " UWB_QM_PORT
   UWB_QM_PORT="${UWB_QM_PORT:-5000}"
+elif [ "$UWB_QM_TYPE" = "nrf" ]; then
+  read -p "UWB QM nRF port [ftdi://FT4222]: " UWB_QM_NRF_PORT
+  UWB_QM_NRF_PORT="${UWB_QM_NRF_PORT:-ftdi://FT4222}"
+  read -p "UWB QM nRF role (controller / controlee) [controlee]: " UWB_QM_NRF_ROLE
+  UWB_QM_NRF_ROLE="${UWB_QM_NRF_ROLE:-controlee}"
 fi
 
 # 1. Generate robot.env
@@ -47,9 +58,11 @@ mkdir -p "$CONFIG_DIR"
 cat > "$CONFIG_DIR/robot.env" <<EOF
 ROBOT_NS=$ROBOT_NS
 ROS_DOMAIN_ID=$DOMAIN_ID
-UWB_QM_TYPE=$UWB_QM_TYPE
+UWB_QM_TYPE=$UWB_QM_TYPE_ENV
 UWB_QM_HOST=$UWB_QM_HOST
 UWB_QM_PORT=$UWB_QM_PORT
+UWB_QM_NRF_PORT=$UWB_QM_NRF_PORT
+UWB_QM_NRF_ROLE=$UWB_QM_NRF_ROLE
 EOF
 echo "[OK] Created $CONFIG_DIR/robot.env"
 
