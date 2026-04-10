@@ -27,12 +27,29 @@ if [ -z "$ROBOT_NS" ] || [ -z "$DOMAIN_ID" ]; then
   exit 1
 fi
 
+echo ""
+echo "--- UWB QM Configuration ---"
+read -p "UWB QM type (rpi / nrf) [rpi]: " UWB_QM_TYPE
+UWB_QM_TYPE="${UWB_QM_TYPE:-rpi}"
+
+UWB_QM_HOST=""
+UWB_QM_PORT=""
+if [ "$UWB_QM_TYPE" = "rpi" ]; then
+  read -p "UWB QM host [192.168.5.2]: " UWB_QM_HOST
+  UWB_QM_HOST="${UWB_QM_HOST:-192.168.5.2}"
+  read -p "UWB QM port [5000]: " UWB_QM_PORT
+  UWB_QM_PORT="${UWB_QM_PORT:-5000}"
+fi
+
 # 1. Generate robot.env
 CONFIG_DIR="$REPO_DIR/stella_tools/config"
 mkdir -p "$CONFIG_DIR"
 cat > "$CONFIG_DIR/robot.env" <<EOF
 ROBOT_NS=$ROBOT_NS
 ROS_DOMAIN_ID=$DOMAIN_ID
+UWB_QM_TYPE=$UWB_QM_TYPE
+UWB_QM_HOST=$UWB_QM_HOST
+UWB_QM_PORT=$UWB_QM_PORT
 EOF
 echo "[OK] Created $CONFIG_DIR/robot.env"
 

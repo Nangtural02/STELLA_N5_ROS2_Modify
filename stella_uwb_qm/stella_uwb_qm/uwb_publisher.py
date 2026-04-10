@@ -1,3 +1,4 @@
+import os
 import sys
 
 import rclpy
@@ -23,8 +24,8 @@ class UwbPublisher(Node):
         self._frame_id = f'{ns}/{base_frame_id}' if ns else base_frame_id
 
         tcp_cfg = config.get('tcp', {})
-        host = tcp_cfg.get('host', '192.168.5.2')
-        port = tcp_cfg.get('port', 5000)
+        host = os.environ.get('UWB_QM_HOST') or tcp_cfg.get('host', '192.168.5.2')
+        port = int(os.environ.get('UWB_QM_PORT', 0) or tcp_cfg.get('port', 5000))
 
         self._reader = TcpReader(host, port, self._on_tcp_line, self.get_logger())
         self._reader.start()
